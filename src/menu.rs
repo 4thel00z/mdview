@@ -1,5 +1,7 @@
 use muda::accelerator::Accelerator;
-use muda::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use muda::{AboutMetadata, CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
+
+use crate::appearance::Appearance;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
@@ -15,9 +17,21 @@ pub enum Action {
     ZoomReset,
     Back,
     Forward,
+    ToggleAppearance,
+    SetAppearance(Appearance),
 }
 
-const ITEMS: [(Action, &str, &str, &str); 12] = [
+pub struct AppMenu {
+    appearance: Vec<(Appearance, CheckMenuItem)>,
+}
+
+impl AppMenu {
+    pub fn show_appearance(&self, selected: Appearance) {
+        self.appearance.iter().for_each(|(appearance, item)| item.set_checked(*appearance == selected));
+    }
+}
+
+const ITEMS: [(Action, &str, &str, &str); 13] = [
     (Action::Open, "open", "Open…", "CmdOrCtrl+O"),
     (Action::Reveal, "reveal", "Reveal in Finder", "CmdOrCtrl+Shift+R"),
     (Action::Print, "print", "Print…", "CmdOrCtrl+P"),
@@ -30,9 +44,14 @@ const ITEMS: [(Action, &str, &str, &str); 12] = [
     (Action::ZoomReset, "zoom-reset", "Actual Size", "CmdOrCtrl+Digit0"),
     (Action::Back, "back", "Back", "CmdOrCtrl+BracketLeft"),
     (Action::Forward, "forward", "Forward", "CmdOrCtrl+BracketRight"),
+    (Action::ToggleAppearance, "toggle-appearance", "Toggle Light/Dark", "CmdOrCtrl+Shift+KeyL"),
 ];
+const APPEARANCE_PREFIX: &str = "appearance-";
 
 pub fn action_for(id: &str) -> Option<Action> {
+    if let Some(name) = id.strip_prefix(APPEARANCE_PREFIX) {
+        return Some(Action::SetAppearance(Appearance::parse(name)));
+    }
     ITEMS.iter().find(|(_, item_id, _, _)| *item_id == id).map(|(action, ..)| *action)
 }
 
@@ -45,7 +64,7 @@ fn item(action: Action) -> MenuItem {
     MenuItem::with_id(id, label, true, shortcut.parse::<Accelerator>().ok())
 }
 
-pub fn build() -> muda::Result<Menu> {
+pub fn build(selected: Appearance) -> muda::Result<AppMenu> {
     let about = AboutMetadata {
         name: Some("mdview".into()),
         version: Some(env!("CARGO_PKG_VERSION").into()),
@@ -91,10 +110,35 @@ pub fn build() -> muda::Result<Menu> {
             &item(Action::FindPrevious),
         ],
     )?;
+    let appearance: Vec<(Appearance, CheckMenuItem)> = Appearance::ALL
+        .into_iter()
+        .map(|appearance| {
+            let label = match appearance {
+                Appearance::System => "Match System",
+                Appearance::Light => "Light",
+                Appearance::Dark => "Dark",
+            };
+            let id = format!("{APPEARANCE_PREFIX}{}", appearance.name());
+            (appearance, CheckMenuItem::with_id(id, label, true, appearance == selected, None))
+        })
+        .collect();
+    let appearance_menu = Submenu::with_items(
+        "Appearance",
+        true,
+        &[
+            &item(Action::ToggleAppearance),
+            &PredefinedMenuItem::separator(),
+            &appearance[0].1,
+            &appearance[1].1,
+            &appearance[2].1,
+        ],
+    )?;
     let view = Submenu::with_items(
         "View",
         true,
         &[
+            &appearance_menu,
+            &PredefinedMenuItem::separator(),
             &item(Action::Reload),
             &PredefinedMenuItem::separator(),
             &item(Action::ZoomReset),
@@ -120,7 +164,8 @@ pub fn build() -> muda::Result<Menu> {
     let menu = Menu::with_items(&[&app, &file, &edit, &view, &window])?;
     menu.init_for_nsapp();
     window.set_as_windows_menu_for_nsapp();
-    Ok(menu)
+    Box::leak(Box::new(menu));
+    Ok(AppMenu { appearance })
 }
 
 #[cfg(test)]
@@ -133,5 +178,11 @@ mod tests {
             assert_eq!(action_for(id), Some(action));
             assert!(shortcut.parse::<Accelerator>().is_ok(), "{shortcut}");
         }
+    }
+
+    #[test]
+    fn appearance_ids_map_to_set_appearance() {
+        assert_eq!(action_for("appearance-dark"), Some(Action::SetAppearance(Appearance::Dark)));
+        assert_eq!(action_for("appearance-system"), Some(Action::SetAppearance(Appearance::System)));
     }
 }

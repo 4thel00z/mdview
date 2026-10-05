@@ -33,7 +33,8 @@ Opening a README should take as long as opening a text file. mdview starts in a 
 - **Live reload.** Saving in any editor updates the window and keeps your scroll position.
 - **Relative links and images.** Linked Markdown files open in the same window, with back and forward. Web links open in your browser.
 - **Safe raw HTML.** Centered logos, `<details>` and badges survive. Scripts and event handlers are stripped by [ammonia](https://github.com/rust-ammonia/ammonia), and a Content Security Policy blocks the rest.
-- **Two themes.** The light theme uses Georgia headings, Space Grotesk body text and Space Mono labels on warm stone. The dark theme is neutral near-black with tight system type.
+- **Two themes, one shortcut.** Light uses Georgia headings, Space Grotesk body text and Space Mono labels on warm stone. Dark is neutral near-black with tight system type. Press <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>L</kbd> to flip between them, or pick Match System, Light or Dark under View › Appearance. The choice is remembered.
+- **Print-style layout.** Callouts, tables, quotes and code use rules and margin labels instead of rounded cards.
 - **Native app behavior.** Proxy icon in the title bar, Dock recents, find in page, zoom and print.
 
 ## Install
@@ -63,6 +64,7 @@ mdview --render README.md > README.html
 |---|---|
 | Open | <kbd>⌘</kbd> <kbd>O</kbd> |
 | Find, next, previous | <kbd>⌘</kbd> <kbd>F</kbd> · <kbd>⌘</kbd> <kbd>G</kbd> · <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>G</kbd> |
+| Toggle light and dark | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>L</kbd> |
 | Reload | <kbd>⌘</kbd> <kbd>R</kbd> |
 | Zoom in, out, reset | <kbd>⌘</kbd> <kbd>=</kbd> · <kbd>⌘</kbd> <kbd>-</kbd> · <kbd>⌘</kbd> <kbd>0</kbd> |
 | Back, forward | <kbd>⌘</kbd> <kbd>[</kbd> · <kbd>⌘</kbd> <kbd>]</kbd> |
@@ -97,6 +99,7 @@ make default   # re-apply the default handler for .md and .markdown
 | `src/render.rs` | Markdown to sanitized HTML, themes |
 | `src/protocol.rs` | `mdview://` scheme, embedded fonts |
 | `src/app.rs` | Windows, live reload, menu actions |
+| `src/appearance.rs` | Light, dark and system appearance, saved choice |
 | `bundle/Info.plist` | Document types and imported Markdown type |
 | `scripts/` | Bundling, icon, install and default handler |
 

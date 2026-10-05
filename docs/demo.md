@@ -23,7 +23,9 @@ fn main() {
 - [ ] Math blocks
 
 > [!TIP]
-> Press <kbd>⌘</kbd> <kbd>F</kbd> to search the page, and <kbd>⌘</kbd> <kbd>=</kbd> to zoom.
+> Press <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>L</kbd> to switch between light and dark.
+
+> Simplicity is prerequisite for reliability.
 
 Footnotes render at the bottom.[^1]
 

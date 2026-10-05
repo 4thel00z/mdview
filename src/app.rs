@@ -9,11 +9,12 @@ use notify_debouncer_mini::{DebounceEventResult, Debouncer, new_debouncer};
 use tao::dpi::LogicalSize;
 use tao::event::{Event, StartCause, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoop, EventLoopBuilder, EventLoopProxy, EventLoopWindowTarget};
-use tao::window::{Window, WindowBuilder, WindowId};
+use tao::window::{Theme, Window, WindowBuilder, WindowId};
 use wry::{NewWindowResponse, PageLoadEvent, WebView, WebViewBuilder};
 
+use crate::appearance::Appearance;
 use crate::macos;
-use crate::menu::{self, Action};
+use crate::menu::{self, Action, AppMenu};
 use crate::protocol::{self, SCHEME};
 use crate::render::renderer;
 
@@ -44,6 +45,8 @@ struct App {
     proxy: EventLoopProxy<UserEvent>,
     prompted: bool,
     pending: Vec<PathBuf>,
+    appearance: Appearance,
+    menu: AppMenu,
 }
 
 pub fn run(paths: Vec<PathBuf>) -> Result<()> {
@@ -56,14 +59,16 @@ pub fn run(paths: Vec<PathBuf>) -> Result<()> {
         };
         menu_proxy.send_event(UserEvent::Menu(action)).ok();
     }));
+    let appearance = Appearance::load();
     let mut app = App {
         documents: HashMap::new(),
         focused: None,
         proxy,
         prompted: false,
         pending: paths,
+        appearance,
+        menu: menu::build(appearance)?,
     };
-    Box::leak(Box::new(menu::build()?));
     event_loop.run(move |event, target, control_flow| app.handle(event, target, control_flow))
 }
 
@@ -156,6 +161,7 @@ impl App {
             .with_inner_size(LogicalSize::new(880.0, 1000.0))
             .with_min_inner_size(LogicalSize::new(360.0, 240.0))
             .with_visible(false)
+            .with_theme(self.appearance.theme())
             .build(target)?;
         let id = window.id();
         let load_proxy = self.proxy.clone();
@@ -236,9 +242,26 @@ impl App {
         document.webview.evaluate_script(&format!("window.mdview.replace({literal})")).ok();
     }
 
+    fn set_appearance(&mut self, appearance: Appearance) {
+        self.appearance = appearance;
+        appearance.save();
+        self.menu.show_appearance(appearance);
+        self.documents.values().for_each(|document| document.window.set_theme(appearance.theme()));
+    }
+
+    fn current_theme(&self) -> Theme {
+        self.focused
+            .and_then(|id| self.documents.get(&id))
+            .or_else(|| self.documents.values().next())
+            .map_or(Theme::Light, |document| document.window.theme())
+    }
+
     fn perform(&mut self, target: &EventLoopWindowTarget<UserEvent>, action: Action) {
-        if action == Action::Open {
-            return self.prompt(target);
+        match action {
+            Action::Open => return self.prompt(target),
+            Action::SetAppearance(appearance) => return self.set_appearance(appearance),
+            Action::ToggleAppearance => return self.set_appearance(Appearance::opposite_of(self.current_theme())),
+            _ => {}
         }
         let Some(document) = self.focused.and_then(|id| self.documents.get_mut(&id)) else {
             return;
