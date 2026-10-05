@@ -10,7 +10,7 @@ Rust renders the document and the system WebKit view displays it.<br>
 No Electron, no bundled browser, about 3 MB.
 
 ![Rust](https://img.shields.io/badge/Rust-2024-222c2c?style=flat-square&logo=rust&logoColor=white)
-![macOS](https://img.shields.io/badge/macOS-12%2B-222c2c?style=flat-square&logo=apple&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-13%2B-222c2c?style=flat-square&logo=apple&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-222c2c?style=flat-square)
 
 </div>
@@ -54,7 +54,8 @@ Double-click any Markdown file, or use the terminal:
 
 ```sh
 open README.md
-~/Applications/mdview.app/Contents/MacOS/mdview notes.md todo.md
+alias mdview=~/Applications/mdview.app/Contents/MacOS/mdview
+mdview notes.md todo.md
 mdview --render README.md > README.html
 ```
 
