@@ -1,5 +1,6 @@
 mod app;
 mod appearance;
+mod files;
 mod macos;
 mod menu;
 mod protocol;

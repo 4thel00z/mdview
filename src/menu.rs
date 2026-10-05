@@ -17,6 +17,7 @@ pub enum Action {
     ZoomReset,
     Back,
     Forward,
+    Palette,
     ToggleAppearance,
     SetAppearance(Appearance),
 }
@@ -31,10 +32,11 @@ impl AppMenu {
     }
 }
 
-const ITEMS: [(Action, &str, &str, &str); 13] = [
+const ITEMS: [(Action, &str, &str, &str); 14] = [
     (Action::Open, "open", "Open…", "CmdOrCtrl+O"),
     (Action::Reveal, "reveal", "Reveal in Finder", "CmdOrCtrl+Shift+R"),
     (Action::Print, "print", "Print…", "CmdOrCtrl+P"),
+    (Action::Palette, "palette", "Search…", "CmdOrCtrl+KeyK"),
     (Action::Find, "find", "Find…", "CmdOrCtrl+F"),
     (Action::FindNext, "find-next", "Find Next", "CmdOrCtrl+G"),
     (Action::FindPrevious, "find-previous", "Find Previous", "CmdOrCtrl+Shift+G"),
@@ -105,6 +107,7 @@ pub fn build(selected: Appearance) -> muda::Result<AppMenu> {
             &PredefinedMenuItem::copy(None),
             &PredefinedMenuItem::select_all(None),
             &PredefinedMenuItem::separator(),
+            &item(Action::Palette),
             &item(Action::Find),
             &item(Action::FindNext),
             &item(Action::FindPrevious),

@@ -13,6 +13,7 @@ use tao::window::{Theme, Window, WindowBuilder, WindowId};
 use wry::{NewWindowResponse, PageLoadEvent, WebView, WebViewBuilder};
 
 use crate::appearance::Appearance;
+use crate::files::{markdown_files, search_root};
 use crate::macos;
 use crate::menu::{self, Action, AppMenu};
 use crate::protocol::{self, SCHEME};
@@ -266,6 +267,11 @@ impl App {
         let Some(document) = self.focused.and_then(|id| self.documents.get_mut(&id)) else {
             return;
         };
+        if action == Action::Palette {
+            let payload = palette_files(&document.path);
+            document.webview.evaluate_script(&format!("window.mdview.togglePalette({payload})")).ok();
+            return;
+        }
         let script = match action {
             Action::Find => "window.mdview.openFind()",
             Action::FindNext => "window.mdview.findNext()",
@@ -314,6 +320,25 @@ fn navigate(url: String) -> bool {
     }
     open::that_detached(&path).ok();
     false
+}
+
+fn palette_files(current: &Path) -> String {
+    let Some(root) = search_root(current) else {
+        return "[]".to_owned();
+    };
+    let files: Vec<serde_json::Value> = markdown_files(&root)
+        .iter()
+        .map(|path| {
+            let relative = path.strip_prefix(&root).unwrap_or(path);
+            serde_json::json!({
+                "name": path.file_name().map(|name| name.to_string_lossy()).unwrap_or_default(),
+                "dir": relative.parent().map(|dir| dir.to_string_lossy()).unwrap_or_default(),
+                "url": protocol::url_for(path),
+                "current": path == current,
+            })
+        })
+        .collect();
+    serde_json::Value::Array(files).to_string()
 }
 
 fn reveal(path: &Path) {
